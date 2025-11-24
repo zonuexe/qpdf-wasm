@@ -1,7 +1,10 @@
 # qpdf-wasm
 
-ブラウザ上で qpdf ( --qdf ) を実行するための簡易セットです。  
+ブラウザ上で qpdf ( --qdf ) を実行するための簡易セットです。
+
 Emscripten コンテナで qpdf を wasm 化し、`dist/` 以下に成果物 (`out/qpdf.js` / `out/qpdf.wasm`) とシンプルな UI ページを用意しています。
+
+「[スライドホスティングサイトでの文字化けの悩みをさらに調べていたら、より良さそうな対処方法を発見した - kmuto’s blog](https://kmuto.hatenablog.com/entry/2025/11/23/111400)」に準拠したPDF正規化（`--qdf`）と、必要に応じて再圧縮をブラウザ上で行うことを目的にしています。
 
 ## 使い方
 
@@ -25,7 +28,7 @@ cd dist
 python -m http.server 8000  # 例
 ```
 
-ブラウザで `http://localhost:8000` を開き、PDF を選択して「qpdf --qdf を実行」を押すと変換済み PDF をダウンロードできます。
+ブラウザで <http://localhost:8000> を開き、PDF を選択して「qpdf --qdf を実行」を押すと変換済み PDF をダウンロードできます。
 
 ### 3. GitHub Pages に配置する場合
 

@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>qpdf-wasm --qdf playground</title>
+  <title>PDF正規化 (qpdf --qdf)</title>
+  <link rel="license" href="LICENSE.txt">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
@@ -29,6 +30,14 @@
       align-items: center;
       justify-content: center;
       padding: 32px 18px;
+      a {
+        color: #8bd7ff;
+        text-decoration: none;
+        &:hover {
+          color: #c6e8ff;
+          text-decoration: underline;
+        }
+      }
     }
     .shell {
       width: min(960px, 100%);
@@ -45,6 +54,14 @@
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
+      a {
+        color: #8bd7ff;
+        text-decoration: none;
+        &:hover {
+          color: #c6e8ff;
+          text-decoration: underline;
+        }
+      }
     }
     h1 {
       margin: 0;
@@ -74,11 +91,11 @@
       transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
       cursor: pointer;
       background: rgba(255,255,255,0.02);
-    }
-    .drop.dragging {
-      border-color: var(--accent);
-      background: rgba(83,243,195,0.08);
-      transform: translateY(-1px);
+      &.dragging {
+        border-color: var(--accent);
+        background: rgba(83,243,195,0.08);
+        transform: translateY(-1px);
+      }
     }
     .controls {
       display: flex;
@@ -97,14 +114,14 @@
       cursor: pointer;
       transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
       box-shadow: 0 10px 30px rgba(83, 243, 195, 0.28);
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+      &:not(:disabled):hover { transform: translateY(-1px); }
     }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      box-shadow: none;
-      transform: none;
-    }
-    button:not(:disabled):hover { transform: translateY(-1px); }
     .muted { color: var(--muted); font-size: 14px; }
     textarea {
       width: 100%;
@@ -128,9 +145,9 @@
       border-radius: 10px;
       padding: 10px 14px;
       transition: background 0.15s ease, color 0.15s ease;
+      &:hover { background: rgba(83,243,195,0.12); color: #0b0f16; }
+      &.hidden { display: none; }
     }
-    .download:hover { background: rgba(83,243,195,0.12); color: #0b0f16; }
-    .download.hidden { display: none; }
     input[type="file"] { display: none; }
     .filename { font-weight: 600; }
     .status-line { display: flex; gap: 10px; align-items: center; }
@@ -141,17 +158,23 @@
       font-size: 13px;
       line-height: 1.6;
       background: rgba(0,0,0,0.2);
+      a {
+        color: #8bd7ff;
+        text-decoration: none;
+        &:hover { color: #c6e8ff; text-decoration: underline; }
+      }
     }
-    footer a { color: var(--accent); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
   <div class="shell">
     <header>
       <div>
-        <h1>qpdf --qdf (WASM)</h1>
-        <div class="status">ブラウザ上で qpdf を実行して構造化されたPDFを作成します。</div>
+        <h1>PDF正規化 (qpdf --qdf)</h1>
+        <div class="status">
+          <a href="https://kmuto.hatenablog.com/entry/2025/11/23/111400"> スライドホスティングサイトでの文字化けの悩みをさらに調べていたら、より良さそうな対処方法を発見した - kmuto’s blog</a>
+          の手順に沿って、ブラウザ上で qpdf --qdf を実行し、必要に応じて再圧縮します。
+        </div>
       </div>
       <div class="status-line">
         <span class="muted">ステータス:</span>
@@ -180,7 +203,7 @@
       </section>
     </main>
     <footer>
-      <div><strong>Copyright, License</strong></div>
+      <h2 id="copyright">Copyright, License</h2>
       <div>
         qpdf is copyright (c) 2005-2021 Jay Berkenbilt, 2022-2025 Jay Berkenbilt and Manfred Holger
       </div>
