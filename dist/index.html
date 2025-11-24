@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>qpdf-wasm --qdf playground</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: radial-gradient(circle at 20% 20%, #1a2a6c, #151924 45%, #0e1118 90%);
+      --panel: rgba(255, 255, 255, 0.06);
+      --accent: #53f3c3;
+      --accent-2: #7aa0ff;
+      --text: #f4f6fb;
+      --muted: #9fb0c5;
+      --border: rgba(255,255,255,0.12);
+      --shadow: 0 15px 50px rgba(0,0,0,0.45);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 18px;
+    }
+    .shell {
+      width: min(960px, 100%);
+      background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.02em;
+    }
+    .status {
+      font-size: 14px;
+      color: var(--muted);
+    }
+    main {
+      display: grid;
+      gap: 16px;
+      padding: 24px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .drop {
+      border: 1.5px dashed var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+      background: rgba(255,255,255,0.02);
+    }
+    .drop.dragging {
+      border-color: var(--accent);
+      background: rgba(83,243,195,0.08);
+      transform: translateY(-1px);
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    button {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b0f16;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+      box-shadow: 0 10px 30px rgba(83, 243, 195, 0.28);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    button:not(:disabled):hover { transform: translateY(-1px); }
+    .muted { color: var(--muted); font-size: 14px; }
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      color: var(--text);
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    }
+    .download {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 10px 14px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .download:hover { background: rgba(83,243,195,0.12); color: #0b0f16; }
+    .download.hidden { display: none; }
+    input[type="file"] { display: none; }
+    .filename { font-weight: 600; }
+    .status-line { display: flex; gap: 10px; align-items: center; }
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      background: rgba(0,0,0,0.2);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <h1>qpdf --qdf (WASM)</h1>
+        <div class="status">ブラウザ上で qpdf を実行して構造化されたPDFを作成します。</div>
+      </div>
+      <div class="status-line">
+        <span class="muted">ステータス:</span>
+        <span data-status class="filename">WASM 読み込み前</span>
+      </div>
+    </header>
+    <main>
+      <section class="panel">
+        <div class="drop" data-drop>
+          <div class="filename" data-filename>ファイル未選択</div>
+          <div class="muted">クリックまたはドロップしてPDFを選択</div>
+          <input type="file" accept="application/pdf" data-file-input />
+        </div>
+        <div class="controls">
+          <button type="button" data-run>qpdf --qdf を実行</button>
+          <label class="muted" style="display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" data-recompress checked />
+            qdf後に最高圧縮で再生成する
+          </label>
+          <a class="download hidden" data-download href="#" download>変換したPDFをダウンロード</a>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="muted" style="margin-bottom:8px;">ログ</div>
+        <textarea data-log readonly></textarea>
+      </section>
+    </main>
+    <footer>
+      <div><strong>Copyright, License</strong></div>
+      <div>
+        qpdf is copyright (c) 2005-2021 Jay Berkenbilt, 2022-2025 Jay Berkenbilt and Manfred Holger
+      </div>
+      <div>
+        Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noreferrer">https://www.apache.org/licenses/LICENSE-2.0</a>
+      </div>
+      <div>
+        Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+      </div>
+      <div>
+        You may also see the license in the file <code>LICENSE.txt</code> in the source distribution.
+      </div>
+      <div>
+        Versions of qpdf prior to version 7 were released under the terms of version 2.0 of the Artistic License. At your option, you may continue to consider qpdf to be licensed under those terms.
+      </div>
+      <div style="margin-top:8px;">
+        <a href="https://qpdf.sourceforge.io/" target="_blank" rel="noreferrer">qpdf official site</a> /
+        <a href="https://github.com/qpdf/qpdf" target="_blank" rel="noreferrer">source on GitHub</a>
+      </div>
+    </footer>
+  </div>
+  <script src="./app.js"></script>
+  <script src="./out/qpdf.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+FROM emscripten/emsdk:3.1.73
+
+# Build qpdf static into wasm via emcmake cmake
+WORKDIR /src/qpdf
+
+# Add build deps and cache-friendly copy
+COPY qpdf /src/qpdf
+
+# Default build args can be overridden
+ARG BUILD_TYPE=Release
+
+# Lightweight pkg-config shims so CMake finds zlib/libjpeg ports
+RUN apt-get update && apt-get install -y --no-install-recommends pkg-config ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /usr/lib/emscripten-pkgconfig && \
+    printf "prefix=/emsdk/upstream/emscripten/cache/sysroot\nincludedir=\${prefix}/include\nName: zlib\nDescription: zlib (emscripten port)\nVersion: 1.3\nCflags: -I\${includedir}\nLibs: -sUSE_ZLIB=1\n" \
+      >/usr/lib/emscripten-pkgconfig/zlib.pc && \
+    printf "prefix=/emsdk/upstream/emscripten/cache/sysroot\nincludedir=\${prefix}/include\nName: libjpeg\nDescription: libjpeg (emscripten port)\nVersion: 9\nCflags: -I\${includedir}\nLibs: -sUSE_LIBJPEG=1\n" \
+      >/usr/lib/emscripten-pkgconfig/libjpeg.pc
+
+ENV PKG_CONFIG_PATH=/usr/lib/emscripten-pkgconfig
+
+# Prebuild emscripten ports so headers/libs are present
+RUN embuilder build zlib libjpeg
+
+# Build (just qpdf) and stage artifacts into /out
+RUN mkdir -p build /out && \
+    cd build && \
+    emcmake cmake .. \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -DBUILD_SHARED_LIBS=OFF \
+      -DBUILD_STATIC_LIBS=ON \
+      -DBUILD_TESTING=OFF \
+      -DINSTALL_EXAMPLES=OFF \
+      -DINSTALL_MANUAL=OFF \
+      -DENABLE_COVERAGE=OFF \
+      -DCMAKE_EXE_LINKER_FLAGS="-sUSE_ZLIB=1 -sUSE_LIBJPEG=1 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=268435456" \
+      -DREQUIRE_CRYPTO_NATIVE=ON \
+      -DUSE_IMPLICIT_CRYPTO=OFF \
+      -DREQUIRE_CRYPTO_OPENSSL=OFF \
+      -DREQUIRE_CRYPTO_GNUTLS=OFF \
+      -DSKIP_OS_SECURE_RANDOM=ON \
+      -DUSE_INSECURE_RANDOM=ON \
+      -DQTEST_COLOR=OFF && \
+    emmake make -j"$(nproc)" qpdf && \
+    cp -a qpdf/qpdf.js qpdf/qpdf.wasm /out/
